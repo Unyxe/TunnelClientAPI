@@ -15,10 +15,17 @@ namespace TunnelClientAPI
         {
             TcpClient client = new TcpClient("127.0.0.1", 8091);
             NetworkStream ns = client.GetStream();
-            WriteBytesToNS(ns, Encoding.ASCII.GetBytes(@"<chatapp>\msg\?query-SGVsbG8gd29ybGQK&auth-fb1f92fce9539c1a723adabc3e9eb875"));
-            byte[] response = GetBytesFromNS(ns);
-            Console.WriteLine(Encoding.ASCII.GetString(response));
-            Console.ReadLine();
+            while (true)
+            {
+                if (!ns.DataAvailable) continue;
+                byte[] response = GetBytesFromNS(ns);
+                string response_str = Encoding.ASCII.GetString(response);
+                foreach(byte b in response)
+                {
+                    Console.WriteLine(b);
+                }
+                Console.WriteLine(response_str);
+            }
         }
 
         static void WriteBytesToNS(NetworkStream stream, byte[] bytes)
@@ -27,20 +34,19 @@ namespace TunnelClientAPI
             {
                 stream.WriteByte(b);
             }
+            stream.WriteByte(126);
         }
         static byte[] GetBytesFromNS(NetworkStream stream)
         {
             List<byte> byte_list = new List<byte>();
-            while (!stream.DataAvailable) { }
-            while (stream.DataAvailable)
+            while (true)
             {
                 int next = stream.ReadByte();
-                if (next == -1)
+                if (next == -1 || next == 126)
                 {
                     break;
                 }
                 byte_list.Add((byte)next);
-                Thread.Sleep(1);
             }
             return byte_list.ToArray();
         }
